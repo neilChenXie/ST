@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		   http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+		   http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+		   http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+
+	<context:annotation-config />
+	<!-- 自动扫描(自动注入) -->
+	<context:component-scan
+		base-package="com.chen.st.controller" />
+		
+	<mvc:annotation-driven>
+		<mvc:message-converters register-defaults="true">
+			<!-- 避免IE执行AJAX时,返回JSON出现下载文件 -->
+			<bean
+				class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+				<property name="supportedMediaTypes">
+					<list>
+						<value>text/html;charset=UTF-8</value>
+					</list>
+				</property>
+			</bean>
+		</mvc:message-converters>
+	</mvc:annotation-driven>
+	
+	<mvc:resources location="**" mapping="**" />
+
+<!-- 	<aop:aspectj-autoproxy proxy-target-class="true" /> -->
+	
+	
+	<!-- 配置文件spring和springMVC各自加载 -->
+	<!-- 引入属性文件 ,注意两个都要加上ignore-unresolvable="true",并且只能写在同一个spring文件中 -->
+	<context:property-placeholder location="classpath:jdbc.properties"
+		ignore-unresolvable="true" />
+	<context:property-placeholder location="classpath:system.properties"
+		ignore-unresolvable="true" />
+
+<!-- 	系统参数配置 -->
+<!-- 	<bean id="parameter" class="com.sekorm.sync.common.Parameter"> -->
+<!-- 		<property name="webPortUrl" value="${resrc_url}" /> -->
+<!-- 	</bean> -->
+
+	
+	<!-- 上传文件大小限制为20M，20*1024*1024 -->
+	<!-- <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver"> 
+		<property name="defaultEncoding"> <value>UTF-8</value> </property> <property 
+		name="maxUploadSize"> <value>209715200</value> </property> <property name="maxInMemorySize"> 
+		<value>2048</value> </property> </bean> -->
+
+	
+
+	<!-- jspFile -->
+	<bean id="viewResolver"
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="viewClass">
+			<value>org.springframework.web.servlet.view.JstlView</value>
+		</property>
+		<property name="prefix">
+			<value>/jsp/</value>
+		</property>
+		<property name="suffix">
+			<value>.jsp</value>
+		</property>
+	</bean>
+
+</beans>
