@@ -4,10 +4,14 @@
 	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app.xsd"
 	id="ST" version="3.0">
 	<display-name>Source Task</display-name>
+	
+	<!-- load spring.xml -->
 	<context-param>
 		<param-name>contextConfigLocation</param-name>
 		<param-value>classpath:spring/spring.xml</param-value>
 	</context-param>
+	
+	<!-- encoding filter -->
 	<filter>
 		<description>字符集过滤器</description>
 		<filter-name>encodingFilter</filter-name>
@@ -31,12 +35,23 @@
 		<description>spring监听器</description>
 		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
 	</listener>
+	
 	<!-- 防止spring内存溢出监听器 -->
 	<listener>
 		<listener-class>org.springframework.web.util.IntrospectorCleanupListener</listener-class>
 	</listener>
 	
-	<!-- Servlet -->
+	<!-- Shiro Filter -->
+	<filter>
+		<filter-name>shiroFilter</filter-name>
+		<filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>shiroFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	
+	<!-- load spring-mvc.xml -->
 	<servlet>
 		<description>main spring mvc sevlvet</description>
 		<servlet-name>MainServlet</servlet-name>

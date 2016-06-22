@@ -17,5 +17,5 @@
 	
 <!-- 	<import resource="classpath:spring/spring-mybatis.xml" /> -->
 
-<!-- 	<import resource="classpath:spring/spring-iatp-shiro.xml" /> -->
+	<import resource="classpath:spring/spring-shiro.xml" />
 </beans>
