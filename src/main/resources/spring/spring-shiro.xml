@@ -5,15 +5,13 @@
 			http://www.springframework.org/schema/beans
 			http://www.springframework.org/schema/beans/spring-beans-3.2.xsd">
 
+	<!-- Necessary -->
+	
 	<bean id="loginRealm" class="com.chen.st.realm.MyRealm" />
 
 	<bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
 		<property name="realm" ref="loginRealm" />
-	</bean>
-
-	<bean
-		class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor">
-		<property name="securityManager" ref="securityManager" />
+		<property name="sessionManager" ref="sessionManager" />
 	</bean>
 
 	<bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
@@ -34,13 +32,22 @@
 
 	<!-- Enabling Shiro Annotations -->
 	
-	<bean
-		class="org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator"
-		depends-on="lifecycleBeanPostProcessor" />
-	
-	<bean
-		class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor">
+	<bean class="org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator"
+		  depends-on="lifecycleBeanPostProcessor" />
+	<bean class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor">
 		<property name="securityManager" ref="securityManager" />
 	</bean>
 
+	<!-- session manager -->
+	<bean id="sessionManager" class="org.apache.shiro.web.session.mgt.DefaultWebSessionManager">
+		<property name="sessionIdCookie" ref="mycookie" />
+		<property name="sessionIdCookieEnabled" value="true" />
+		<property name="sessionListeners" ref="myListener" />
+	</bean>
+	<bean id="mycookie" class="org.apache.shiro.web.servlet.SimpleCookie">
+		<property name="name" value="sid"/>
+	</bean>
+	<!-- session listener -->
+	<bean id="myListener" class="com.chen.st.sessionListener.MyListener">
+	</bean>
 </beans>

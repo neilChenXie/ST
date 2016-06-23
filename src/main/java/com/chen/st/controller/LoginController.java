@@ -7,13 +7,15 @@ import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.subject.Subject;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 @Controller
 @RequestMapping("/manage")
 public class LoginController {
 	
 	@RequestMapping("/login")
-	public void login() {
+	@ResponseBody
+	public boolean login() {
 		String error = null;
 		Subject subject = SecurityUtils.getSubject();
 		UsernamePasswordToken token = new UsernamePasswordToken("Chen", "121");
@@ -25,6 +27,13 @@ public class LoginController {
             error = "用户名/密码错误";  
         }
 		System.out.println(error);
+		return subject.isAuthenticated();
+	}
+	
+	@RequestMapping("/failed")
+	@ResponseBody
+	public String failed() {
+		return "login failed";
 	}
 
 }
