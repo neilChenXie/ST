@@ -6,7 +6,7 @@
 			http://www.springframework.org/schema/beans/spring-beans-3.2.xsd">
 
 	<!-- Necessary -->
-	
+
 	<bean id="loginRealm" class="com.chen.st.realm.MyRealm" />
 
 	<bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
@@ -31,23 +31,53 @@
 	<bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor" />
 
 	<!-- Enabling Shiro Annotations -->
-	
-	<bean class="org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator"
-		  depends-on="lifecycleBeanPostProcessor" />
-	<bean class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor">
+
+	<bean
+		class="org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator"
+		depends-on="lifecycleBeanPostProcessor" />
+	<bean
+		class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor">
 		<property name="securityManager" ref="securityManager" />
 	</bean>
 
 	<!-- session manager -->
-	<bean id="sessionManager" class="org.apache.shiro.web.session.mgt.DefaultWebSessionManager">
+	<bean id="sessionManager"
+		class="org.apache.shiro.web.session.mgt.DefaultWebSessionManager">
 		<property name="sessionIdCookie" ref="mycookie" />
 		<property name="sessionIdCookieEnabled" value="true" />
 		<property name="sessionListeners" ref="myListener" />
+		<property name="sessionDAO" ref="redisSessionDAO" />
 	</bean>
 	<bean id="mycookie" class="org.apache.shiro.web.servlet.SimpleCookie">
-		<property name="name" value="sid"/>
+		<property name="name" value="sid" />
 	</bean>
 	<!-- session listener -->
 	<bean id="myListener" class="com.chen.st.sessionListener.MyListener">
 	</bean>
+
+	<!-- redis: redisDAO -->
+	<bean id="redisSessionDAO" class="com.chen.st.sessionDAO.RedisSessionDAO">
+		<property name="redisManager" ref="redisUtils" />
+	</bean>
+	<bean id="redisUtils" class="com.chen.st.sessionDAO.RedisUtils">
+		<property name="jedisPoolConfig" ref="redisPoolConfig" />
+		<property name="host" value="172.16.2.51" />
+		<property name="port" value="6379" />
+	</bean>
+	<bean id="redisPoolConfig" class="redis.clients.jedis.JedisPoolConfig">
+		<property name="maxTotal" value="2" />
+		<property name="maxIdle" value="2" />
+		<property name="minIdle" value="0" />
+	</bean>
+<!-- 	<bean id="redisSessionDAO" class="com.chen.st.sessionDAO.eg.RedisSessionDAO"> -->
+<!-- 		<property name="redisManager" ref="redisManager" /> -->
+<!-- 	</bean> -->
+<!-- 	<bean id="redisManager" class="com.chen.st.sessionDAO.eg.RedisManager"> -->
+<!-- 		<property name="host" value="172.16.2.51" /> -->
+<!-- 		<property name="port" value="6379" /> -->
+<!-- 		<property name="expire" value="1800" /> -->
+<!-- 		optional -->
+<!-- 		<property name="timeout" value="10000" /> -->
+<!-- 		<property name="password" value="123456" /> -->
+<!-- 	</bean> -->
 </beans>
