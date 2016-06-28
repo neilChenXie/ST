@@ -2,134 +2,248 @@ package com.chen.st.sessionDAO;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.apache.shiro.session.Session;
 import org.apache.shiro.session.UnknownSessionException;
 import org.apache.shiro.session.mgt.eis.AbstractSessionDAO;
+import org.apache.shiro.util.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class RedisSessionDAO extends AbstractSessionDAO {
 
-	private static Logger logger = LoggerFactory.getLogger(RedisSessionDAO.class);
+	private static Logger logger = LoggerFactory.getLogger(RedisDAO.class);
+
+	private String keyPrefix = "shiro_session:";
+
+	private RedisUtils redisUtils;
+
+	int timeout = 0; // 默认从不失效
+
+	private ConcurrentMap<Serializable, Session> sessionMap;
+
+	public RedisSessionDAO() {
+		this.sessionMap = new ConcurrentHashMap<Serializable, Session>();
+	}
+
 	/**
-	 * shiro-redis的session对象前缀
+	 * @Override
+	 * @describe 通过generateSessionId得到新的ID，并与session组合存入redis
+	 * 
+	 * @see
+	 * org.apache.shiro.session.mgt.eis.AbstractSessionDAO#doCreate(org.apache.
+	 * shiro.session.Session)
 	 */
-	private RedisUtils redisManager;
-	
-	/**
-	 * The Redis key prefix for the sessions 
-	 */
-	private String keyPrefix = "shiro_redis_session:";
-	
-	@Override
-	public void update(Session session) throws UnknownSessionException {
-		this.saveSession(session);
-	}
-	
-	/**
-	 * save session
-	 * @param session
-	 * @throws UnknownSessionException
-	 */
-	private void saveSession(Session session) throws UnknownSessionException{
-		if(session == null || session.getId() == null){
-			logger.error("session or session id is null");
-			return;
-		}
-		
-		byte[] key = getByteKey(session.getId());
-		byte[] value = SerializeUtils.serialize(session);
-		session.setTimeout(redisManager.getExpire()*1000);		
-		this.redisManager.set(key, value, redisManager.getExpire());
-	}
-
-	@Override
-	public void delete(Session session) {
-		if(session == null || session.getId() == null){
-			logger.error("session or session id is null");
-			return;
-		}
-		redisManager.del(this.getByteKey(session.getId()));
-
-	}
-
-	@Override
-	public Collection<Session> getActiveSessions() {
-		Set<Session> sessions = new HashSet<Session>();
-		
-		Set<byte[]> keys = redisManager.keys(this.keyPrefix + "*");
-		if(keys != null && keys.size()>0){
-			for(byte[] key:keys){
-				Session s = (Session)SerializeUtils.deserialize(redisManager.get(key));
-				sessions.add(s);
-			}
-		}
-		
-		return sessions;
-	}
-
 	@Override
 	protected Serializable doCreate(Session session) {
-		Serializable sessionId = this.generateSessionId(session);  
-        this.assignSessionId(session, sessionId);
-        this.saveSession(session);
+
+		// 获取uuid的sessionId
+		Serializable sessionId = this.generateSessionId(session);
+		this.assignSessionId(session, sessionId);
+		// 存入
+		saveSession(session);
+
 		return sessionId;
 	}
 
+	/**
+	 * @Override
+	 * @describe 更新session信息
+	 * 
+	 * @see org.apache.shiro.session.mgt.eis.SessionDAO#update(org.apache.shiro.
+	 * session.Session)
+	 */
+	@Override
+	public void update(Session session) throws UnknownSessionException {
+		saveSession(session);
+	}
+
+	/**
+	 * @describe 向redis中写入session
+	 *
+	 * @author neil_xie
+	 * @date Jun 27, 2016
+	 * @param
+	 * @return
+	 */
+	private void saveSession(Session session) {
+
+		if (!validSession(session)) {
+			return;
+		}
+
+		byte[] key = getRedisKey(session.getId());
+		byte[] value = SerializeUtils.serialize(session);
+
+		if (getTimeout() != 0) {
+			session.setTimeout(getTimeout());
+		}
+
+		try {
+			// 存入redis
+			redisUtils.set(key, value, getTimeout() / 1000);
+		} catch (Exception e) {
+			logger.error("Redis Error： {}", e.getMessage());
+		} finally {
+			// 存入内存
+			sessionMap.putIfAbsent(session.getId(), session);
+		}
+
+	}
+
+	/**
+	 * @Override
+	 * @describe 读取session信息
+	 * 
+	 * @see
+	 * org.apache.shiro.session.mgt.eis.AbstractSessionDAO#doReadSession(java.io
+	 * .Serializable)
+	 */
 	@Override
 	protected Session doReadSession(Serializable sessionId) {
-		if(sessionId == null){
+
+		if (sessionId == null) {
 			logger.error("session id is null");
 			return null;
 		}
-		
-		Session s = (Session)SerializeUtils.deserialize(redisManager.get(this.getByteKey(sessionId)));
-		return s;
+
+		Session redisSession = null;
+		Session memorySession = sessionMap.get(sessionId);
+
+		try {
+			// 从Redis获得session
+			redisSession = (Session) SerializeUtils.deserialize(redisUtils.get(getRedisKey(sessionId)));
+		} catch (Exception e) {
+			logger.error("Redis Error： {}", e.getMessage());
+		}
+
+		// Redis挂掉or启动恢复：内存有，Redis没有，写入Redis，返回
+		if (redisSession == null && memorySession != null) {
+			// 从内存得到备份session,并恢复Redis的值
+			saveSession(memorySession);
+			redisSession = memorySession;
+		}
+
+		// 服务器启动：Redis与内存不同时，以Redis为准
+		if (redisSession != memorySession) {
+			saveSession(redisSession);
+		}
+
+		return redisSession;
 	}
-	
+
 	/**
-	 * 获得byte[]型的key
-	 * @param key
+	 * @Override
+	 * @describe 删除Session
+	 * 如果内存删除了，redis未删除，但是相应的securityManager会被删除，下次不会出现登录被恢复
+	 * 
+	 * @see org.apache.shiro.session.mgt.eis.SessionDAO#delete(org.apache.shiro.
+	 * session.Session)
+	 */
+	@Override
+	public void delete(Session session) {
+
+		if (!validSession(session)) {
+			return;
+		}
+
+		try {
+			// 从Redis删除session
+			redisUtils.del(getRedisKey(session.getId()));
+		} catch (Exception e) {
+			logger.error("Redis Error： {}", e.getMessage());
+		} finally {
+			// 从内存删除session
+			sessionMap.remove(getRedisKey(session.getId()));
+		}
+	}
+
+	/**
+	 * @Override
+	 * @describe 获取所有的有效Session
+	 * 
+	 * @see org.apache.shiro.session.mgt.eis.SessionDAO#getActiveSessions()
+	 */
+	@Override
+	public Collection<Session> getActiveSessions() {
+
+		Collection<Session> sessions = new HashSet<Session>();
+
+		try {
+			// 从Redis读取
+			Set<byte[]> keys = redisUtils.keys(this.keyPrefix + "*");
+			if (keys != null && keys.size() > 0) {
+				for (byte[] key : keys) {
+					Session s = (Session) SerializeUtils.deserialize(redisUtils.get(key));
+					sessions.add(s);
+				}
+			}
+		} catch (Exception e) {
+			// 从内存读取
+			logger.error("Redis Error： {}", e.getMessage());
+			Collection<Session> values = sessionMap.values();
+			sessions = values;
+		}
+
+		// 返回
+		if (CollectionUtils.isEmpty(sessions)) {
+			return Collections.emptySet();
+		} else {
+			return Collections.unmodifiableCollection(sessions);
+		}
+	}
+
+	/**
+	 * @describe 验证是否为有效session
+	 *
+	 * @author neil_xie
+	 * @date Jun 27, 2016
+	 * @param
 	 * @return
 	 */
-	private byte[] getByteKey(Serializable sessionId){
+	private boolean validSession(Session session) {
+		if (session == null || session.getId() == null) {
+			logger.error("session or session id 为空");
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * @describe 组装存入redis的key
+	 *
+	 * @author neil_xie
+	 * @date Jun 27, 2016
+	 * @param
+	 * @return
+	 */
+	private byte[] getRedisKey(Serializable sessionId) {
 		String preKey = this.keyPrefix + sessionId;
 		return preKey.getBytes();
 	}
 
-	public RedisUtils getRedisManager() {
-		return redisManager;
-	}
-
-	public void setRedisManager(RedisUtils redisManager) {
-		this.redisManager = redisManager;
-		
-		/**
-		 * 初始化redisManager
-		 */
-//		this.redisManager.init();
-	}
-
-	/**
-	 * Returns the Redis session keys
-	 * prefix.
-	 * @return The prefix
-	 */
 	public String getKeyPrefix() {
 		return keyPrefix;
 	}
 
-	/**
-	 * Sets the Redis sessions key 
-	 * prefix.
-	 * @param keyPrefix The prefix
-	 */
 	public void setKeyPrefix(String keyPrefix) {
 		this.keyPrefix = keyPrefix;
 	}
-	
-	
+
+	public void setRedisUtils(RedisUtils redisUtils) {
+		this.redisUtils = redisUtils;
+	}
+
+	public int getTimeout() {
+		return timeout;
+	}
+
+	public void setTimeout(int timeout) {
+		this.timeout = timeout;
+	}
 }

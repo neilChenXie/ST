@@ -24,9 +24,7 @@ public class RedisDAO extends AbstractSessionDAO {
 
 	@Override
 	public void update(Session session) throws UnknownSessionException {
-		if (validSession(session)) {
-			this.saveSession(session);
-		}
+		this.saveSession(session);
 	}
 
 	@Override
@@ -111,7 +109,7 @@ public class RedisDAO extends AbstractSessionDAO {
 	}
 
 	/**
-	 * @describe 组装存入redis的key
+	 * @describe 转换为redis的key
 	 *
 	 * @author neil_xie
 	 * @date Jun 27, 2016
