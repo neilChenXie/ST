@@ -27,7 +27,7 @@ public class RedisUtils {
 	private String password = null;
 
 	// jedis properties
-	private int expire = 0;
+	private int expire = 1000;
 
 	private static JedisPool jedisPool = null;
 

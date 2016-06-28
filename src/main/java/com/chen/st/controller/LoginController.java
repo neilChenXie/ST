@@ -21,6 +21,7 @@ public class LoginController {
 		UsernamePasswordToken token = new UsernamePasswordToken("Chen", "121");
 		try {
 			subject.login(token);
+			subject.getSession().setAttribute("uid", "21jj32io2n3n");
 		} catch (UnknownAccountException e) {  
             error = "用户名/密码错误";  
         } catch (IncorrectCredentialsException e) {  
