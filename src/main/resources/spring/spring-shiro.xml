@@ -56,7 +56,7 @@
 	</bean>
 
 	<!-- redis: redisDAO -->
-	<bean id="redisSessionDAO" class="com.chen.st.sessionDAO.RedisDAO">
+	<bean id="redisSessionDAO" class="com.chen.st.sessionDAO.RedisSessionDAO">
 		<property name="redisUtils" ref="redisUtils" />
 	</bean>
 	<bean id="redisUtils" class="com.chen.st.sessionDAO.RedisUtils">

@@ -36,5 +36,13 @@ public class LoginController {
 	public String failed() {
 		return "login failed";
 	}
+	
+	@RequestMapping("/logout")
+	@ResponseBody
+	public String logout() {
+		Subject subject = SecurityUtils.getSubject();
+		subject.logout();
+		return "logout";
+	}
 
 }
