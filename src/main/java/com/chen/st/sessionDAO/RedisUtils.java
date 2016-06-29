@@ -1,14 +1,15 @@
 package com.chen.st.sessionDAO;
 
+import java.io.IOException;
 import java.util.Set;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
-import redis.clients.jedis.exceptions.JedisException;
 
 /**
- * @describe
+ * @describe Redis 工具了
+ * 异常抛出 RedisUtilsException
  *
  * @author chen
  * @date Jun 27, 2016
@@ -23,12 +24,13 @@ public class RedisUtils {
 	private String password = null;
 
 	// jedis properties
-	private int expire = 1000;
+	private int expire = 300;
 
 	private static JedisPool jedisPool = null;
 
 	public RedisUtils() {
-		// for Spring to create bean
+		//生成默认设置
+		setJedisPoolConfig(new JedisPoolConfig());
 	}
 
 	/**
@@ -41,13 +43,8 @@ public class RedisUtils {
 	 */
 	private JedisPool getPool() {
 		if (jedisPool == null) {
-			if (jedisPoolConfig == null) {
-				// 如果没有注入，生成默认配置
-				setJedisPoolConfig(new JedisPoolConfig());
-			}
-			// jedisPool = new JedisPool(getJedisPoolConfig(), getHost(),
-			// getPort(), getTimeout(), getPassword());
-			jedisPool = new JedisPool(getJedisPoolConfig(), getHost(), getPort());
+			//在第一次使用时初始化
+			jedisPool = new JedisPool(jedisPoolConfig, host, port, timeout, password);
 		}
 		return jedisPool;
 	}
@@ -66,14 +63,14 @@ public class RedisUtils {
 		}
 	}
 
-	public byte[] get(byte[] key) {
+	public byte[] get(byte[] key) throws JedisUtilsException  {
 		byte[] value = null;
 		Jedis jedis = null;
 		try {
 			jedis = getPool().getResource();
 			value = jedis.get(key);
 		} catch (Exception e) {
-			throw new JedisException("redis连接错误");
+			throw new JedisUtilsException("redis连接错误",e);
 		} finally {
 			returnJedis(jedis);
 		}
@@ -87,8 +84,9 @@ public class RedisUtils {
 	 * @date Jun 27, 2016
 	 * @param
 	 * @return
+	 * @throws IOException 
 	 */
-	public void set(byte[] key, byte[] value) {
+	public void set(byte[] key, byte[] value) throws JedisUtilsException {
 		set(key, value, getExpire());
 	}
 
@@ -100,8 +98,10 @@ public class RedisUtils {
 	 * @param key,
 	 *            value, expire
 	 * @return
+	 * @throws IOException 
+	 * @throws JedisUtilsException 
 	 */
-	public void set(byte[] key, byte[] value, int expire) {
+	public void set(byte[] key, byte[] value, int expire) throws JedisUtilsException {
 		Jedis jedis = null;
 		try {
 			jedis = getPool().getResource();
@@ -110,7 +110,7 @@ public class RedisUtils {
 				jedis.expire(key, expire);
 			}
 		} catch (Exception e) {
-			throw new JedisException("redis连接错误");
+			throw new JedisUtilsException("redis连接错误",e);
 		} finally {
 			returnJedis(jedis);
 		}
@@ -124,13 +124,13 @@ public class RedisUtils {
 	 * @param key
 	 * @return
 	 */
-	public void del(byte[] key) {
+	public void del(byte[] key) throws JedisUtilsException {
 		Jedis jedis = null;
 		try {
 			jedis = getPool().getResource();
 			jedis.del(key);
 		} catch (Exception e) {
-			throw new JedisException("redis连接错误");
+			throw new JedisUtilsException("redis连接错误",e);
 		} finally {
 			returnJedis(jedis);
 		}
@@ -143,15 +143,16 @@ public class RedisUtils {
 	 * @date Jun 27, 2016
 	 * @param pattern
 	 * @return
+	 * @throws JedisUtilsException 
 	 */
-	public Set<byte[]> keys(String pattern) {
+	public Set<byte[]> keys(String pattern) throws JedisUtilsException {
 		Set<byte[]> keys = null;
 		Jedis jedis = null;
 		try {
 			jedis = getPool().getResource();
 			keys = jedis.keys(pattern.getBytes());
 		} catch (Exception e) {
-			throw new JedisException("redis连接错误");
+			throw new JedisUtilsException("redis连接错误",e);
 		} finally {
 			returnJedis(jedis);
 		}
@@ -165,14 +166,15 @@ public class RedisUtils {
 	 * @date Jun 27, 2016
 	 * @param
 	 * @return
+	 * @throws JedisUtilsException 
 	 */
-	public void flunshDB() {
+	public void flunshDB() throws JedisUtilsException {
 		Jedis jedis = null;
 		try {
 			jedis = getPool().getResource();
 			jedis.flushDB();
 		} catch (Exception e) {
-			throw new JedisException("redis连接错误");
+			throw new JedisUtilsException("redis连接错误",e);
 		} finally {
 			returnJedis(jedis);
 		}
@@ -185,15 +187,16 @@ public class RedisUtils {
 	 * @date Jun 27, 2016
 	 * @param
 	 * @return
+	 * @throws JedisUtilsException 
 	 */
-	public long dbSize() {
+	public long dbSize() throws JedisUtilsException {
 		Long dbSize = 0L;
 		Jedis jedis = null;
 		try {
 			jedis = getPool().getResource();
 			dbSize = jedis.dbSize();
 		} catch (Exception e) {
-			throw new JedisException("redis连接错误");
+			throw new JedisUtilsException("redis连接错误",e);
 		} finally {
 			returnJedis(jedis);
 		}

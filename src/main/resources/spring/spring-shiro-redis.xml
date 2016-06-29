@@ -32,16 +32,7 @@
 
 	<bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor" />
 
-	<!-- Enabling Shiro Annotations -->
-	<!-- <bean -->
-	<!-- class="org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator" -->
-	<!-- depends-on="lifecycleBeanPostProcessor" /> -->
-	<!-- <bean -->
-	<!-- class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor"> -->
-	<!-- <property name="securityManager" ref="securityManager" /> -->
-	<!-- </bean> -->
-
-	<!-- session manager -->
+	<!-- SessionManager -->
 	<bean id="sessionManager"
 		class="org.apache.shiro.web.session.mgt.DefaultWebSessionManager">
 		<!-- <property name="sessionIdCookie" ref="mycookie" /> -->
@@ -50,7 +41,7 @@
 		<property name="sessionDAO" ref="redisSessionDAO" />
 	</bean>
 
-	<!-- redis: RedisSessionDAO -->
+	<!-- Redis: RedisSessionDAO -->
 	<bean id="redisSessionDAO" class="com.chen.st.sessionDAO.RedisSessionDAO">
 		<property name="redisUtils" ref="redisUtils" />
 		<property name="keyPrefix" value="shiro_session:" />
@@ -89,25 +80,5 @@
 		<property name="lifo" value="true" />
 		<property name="blockWhenExhausted" value="true" />
 	</bean>
-	<!-- <bean id="redisSessionDAO" class="com.chen.st.sessionDAO.eg.RedisSessionDAO"> -->
-	<!-- <property name="redisManager" ref="redisManager" /> -->
-	<!-- </bean> -->
-	<!-- <bean id="redisManager" class="com.chen.st.sessionDAO.eg.RedisManager"> -->
-	<!-- <property name="host" value="172.16.2.51" /> -->
-	<!-- <property name="port" value="6379" /> -->
-	<!-- <property name="expire" value="1800" /> -->
-	<!-- optional -->
-	<!-- <property name="timeout" value="10000" /> -->
-	<!-- <property name="password" value="123456" /> -->
-	<!-- </bean> -->
-
-	<!-- custome cookie -->
-	<!-- <bean id="mycookie" class="org.apache.shiro.web.servlet.SimpleCookie"> -->
-	<!-- <property name="name" value="sid" /> -->
-	<!-- </bean> -->
-
-	<!-- session listener -->
-	<!-- <bean id="myListener" class="com.chen.st.sessionListener.MyListener"> -->
-	<!-- </bean> -->
 
 </beans>

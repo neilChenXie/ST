@@ -9,7 +9,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.apache.shiro.session.Session;
-import org.apache.shiro.session.UnknownSessionException;
 import org.apache.shiro.session.mgt.eis.AbstractSessionDAO;
 import org.apache.shiro.util.CollectionUtils;
 import org.slf4j.Logger;
@@ -17,13 +16,13 @@ import org.slf4j.LoggerFactory;
 
 public class RedisSessionDAO extends AbstractSessionDAO {
 
-	private static Logger logger = LoggerFactory.getLogger(RedisDAO.class);
+	private static Logger logger = LoggerFactory.getLogger(RedisSessionDAO.class);
 
 	private String keyPrefix = "shiro_session:";
 
 	private RedisUtils redisUtils;
 
-	int timeout = 0; // 默认从不失效
+	int timeout = 300; // 默认从不失效
 
 	private ConcurrentMap<Serializable, Session> sessionMap;
 
@@ -59,7 +58,7 @@ public class RedisSessionDAO extends AbstractSessionDAO {
 	 * session.Session)
 	 */
 	@Override
-	public void update(Session session) throws UnknownSessionException {
+	public void update(Session session) {
 		saveSession(session);
 	}
 
@@ -81,13 +80,13 @@ public class RedisSessionDAO extends AbstractSessionDAO {
 		byte[] value = SerializeUtils.serialize(session);
 
 		if (getTimeout() != 0) {
-			session.setTimeout(getTimeout());
+			session.setTimeout(getTimeout() * 1000);
 		}
 
 		try {
+			redisUtils.set(key, value, getTimeout());
 			// 存入redis
-			redisUtils.set(key, value, getTimeout() / 1000);
-		} catch (Exception e) {
+		} catch (JedisUtilsException e) {
 			logger.error("Redis Error： {}", e.getMessage());
 		} finally {
 			// 存入内存
@@ -118,7 +117,7 @@ public class RedisSessionDAO extends AbstractSessionDAO {
 		try {
 			// 从Redis获得session
 			redisSession = (Session) SerializeUtils.deserialize(redisUtils.get(getRedisKey(sessionId)));
-		} catch (Exception e) {
+		} catch (JedisUtilsException e) {
 			logger.error("Redis Error： {}", e.getMessage());
 		}
 
@@ -155,7 +154,7 @@ public class RedisSessionDAO extends AbstractSessionDAO {
 		try {
 			// 从Redis删除session
 			redisUtils.del(getRedisKey(session.getId()));
-		} catch (Exception e) {
+		} catch (JedisUtilsException e) {
 			logger.error("Redis Error： {}", e.getMessage());
 		} finally {
 			// 从内存删除session
@@ -183,7 +182,7 @@ public class RedisSessionDAO extends AbstractSessionDAO {
 					sessions.add(s);
 				}
 			}
-		} catch (Exception e) {
+		} catch (JedisUtilsException e) {
 			// 从内存读取
 			logger.error("Redis Error： {}", e.getMessage());
 			Collection<Session> values = sessionMap.values();
