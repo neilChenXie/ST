@@ -84,7 +84,7 @@ public class RedisSessionDAO extends AbstractSessionDAO {
 		}
 
 		try {
-			redisUtils.set(key, value, getTimeout());
+			redisUtils.set(key, value, redisUtils.getExpire());
 			// 存入redis
 		} catch (JedisUtilsException e) {
 			logger.error("Redis Error： {}", e.getMessage());
@@ -151,15 +151,15 @@ public class RedisSessionDAO extends AbstractSessionDAO {
 			return;
 		}
 
-		try {
-			// 从Redis删除session
-			redisUtils.del(getRedisKey(session.getId()));
-		} catch (JedisUtilsException e) {
-			logger.error("Redis Error： {}", e.getMessage());
-		} finally {
-			// 从内存删除session
-			sessionMap.remove(getRedisKey(session.getId()));
-		}
+		// try {
+		// // 从Redis删除session
+		// redisUtils.del(getRedisKey(session.getId()));
+		// } catch (JedisUtilsException e) {
+		// logger.error("Redis Error： {}", e.getMessage());
+		// } finally {
+		// // 从内存删除session
+		// sessionMap.remove(getRedisKey(session.getId()));
+		// }
 	}
 
 	/**

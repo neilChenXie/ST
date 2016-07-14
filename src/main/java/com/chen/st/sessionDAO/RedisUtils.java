@@ -25,6 +25,8 @@ public class RedisUtils {
 
 	// jedis properties
 	private int expire = 300;
+	
+	private static RedisUtils redisUtils;
 
 	private static JedisPool jedisPool = null;
 
@@ -33,6 +35,12 @@ public class RedisUtils {
 		setJedisPoolConfig(new JedisPoolConfig());
 	}
 
+	public static synchronized RedisUtils getInstance() {
+		if(redisUtils == null){
+			redisUtils = new RedisUtils();
+		}
+		return redisUtils;
+	}
 	/**
 	 * @describe 初始化redisPool
 	 *
@@ -106,6 +114,7 @@ public class RedisUtils {
 		try {
 			jedis = getPool().getResource();
 			jedis.set(key, value);
+			expire = expire > getExpire()?expire:getExpire();
 			if (expire != 0) {
 				jedis.expire(key, expire);
 			}
