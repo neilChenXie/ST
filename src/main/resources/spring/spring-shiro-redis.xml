@@ -29,26 +29,22 @@
 		<property name="sessionManager" ref="sessionManager" />
 	</bean>
 
-
 	<bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor" />
 
-	<!-- SessionManager -->
+	<!-- session manager -->
 	<bean id="sessionManager"
 		class="org.apache.shiro.web.session.mgt.DefaultWebSessionManager">
-		<!-- <property name="sessionIdCookie" ref="mycookie" /> -->
-		<!-- <property name="sessionIdCookieEnabled" value="true" /> -->
-		<!-- <property name="sessionListeners" ref="myListener" /> -->
 		<property name="sessionDAO" ref="redisSessionDAO" />
 	</bean>
 
-	<!-- Redis: RedisSessionDAO -->
-	<bean id="redisSessionDAO" class="com.chen.st.sessionDAO.RedisSessionDAO">
+	<!-- redis: RedisSessionDAO -->
+	<bean id="redisSessionDAO" class="com.sekorm.common.sessionDAO.RedisSessionDAO">
 		<property name="redisUtils" ref="redisUtils" />
 		<property name="keyPrefix" value="shiro_session:" />
 		<!-- Session过期值：秒级 -->
 		<property name="timeout" value="300" />
 	</bean>
-	<bean id="redisUtils" class="com.chen.st.sessionDAO.RedisUtils">
+	<bean id="redisUtils" class="com.sekorm.common.sessionDAO.RedisUtils">
 		<!-- Required -->
 		<property name="host" value="172.16.2.51" />
 		<property name="port" value="6379" />
@@ -58,7 +54,7 @@
 		<!-- 默认redis连接timeout值 -->
 		<property name="timeout" value="2000" />
 		<!-- 默认k-v过期值：秒级 -->
-		<property name="expire" value="300" />
+		<property name="expire" value="86400" />
 		<!-- 连接池设置 -->
 		<property name="jedisPoolConfig" ref="redisPoolConfig" />
 	</bean>
@@ -69,16 +65,15 @@
 		<property name="maxIdle" value="8" />
 		<property name="minIdle" value="0" />
 		<!-- org.apache.commons.pool2.impl.BaseObjectPoolConfig default -->
-		<property name="maxWaitMillis" value="-1L " />
+		<property name="maxWaitMillis" value="-1" />
 		<property name="testOnBorrow" value="false" />
 		<property name="testOnReturn" value="false" />
 		<property name="testWhileIdle" value="false" />
-		<property name="timeBetweenEvictionRunsMillis" value="-1L" />
+		<property name="timeBetweenEvictionRunsMillis" value="-1" />
 		<property name="numTestsPerEvictionRun" value="3" />
-		<property name="minEvictableIdleTimeMillis" value="1800000L" />
-		<property name="softMinEvictableIdleTimeMillis" value="1800000L" />
+		<property name="minEvictableIdleTimeMillis" value="1800000" />
+		<property name="softMinEvictableIdleTimeMillis" value="1800000" />
 		<property name="lifo" value="true" />
 		<property name="blockWhenExhausted" value="true" />
 	</bean>
-
 </beans>

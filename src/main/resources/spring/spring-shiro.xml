@@ -51,13 +51,15 @@
 	</bean>
 
 	<!-- redis: RedisSessionDAO -->
-	<bean id="redisSessionDAO" class="com.chen.st.sessionDAO.RedisSessionDAO">
+	<!-- <bean id="redisSessionDAO" class="com.chen.st.sessionDAO.RedisSessionDAO"> -->
+	<bean id="redisSessionDAO" class="com.sekorm.common.sessionDAO.RedisSessionDAO">
 		<property name="redisUtils" ref="redisUtils" />
 		<property name="keyPrefix" value="shiro_session:" />
 		<!-- Session过期值：秒级 -->
 		<property name="timeout" value="300" />
 	</bean>
-	<bean id="redisUtils" class="com.chen.st.sessionDAO.RedisUtils">
+	<!-- <bean id="redisUtils" class="com.chen.st.sessionDAO.RedisUtils"> -->
+	<bean id="redisUtils" class="com.sekorm.common.sessionDAO.RedisUtils">
 		<!-- Required -->
 		<property name="host" value="172.16.2.51" />
 		<property name="port" value="6379" />
