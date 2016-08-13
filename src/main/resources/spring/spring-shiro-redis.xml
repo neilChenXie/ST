@@ -42,7 +42,7 @@
 		<property name="redisUtils" ref="redisUtils" />
 		<property name="keyPrefix" value="shiro_session:" />
 		<!-- Session过期值：秒级 -->
-		<property name="timeout" value="300" />
+		<property name="timeout" value="3000" />
 	</bean>
 	<bean id="redisUtils" class="com.sekorm.common.sessionDAO.RedisUtils">
 		<!-- Required -->
